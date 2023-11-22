@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="nuvem.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0000ff" />
+    <link rel="stylesheet" href="home.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      header {
+        background-color: #0000ff;
+        padding: 10px;
+        color: white;
+        text-align: center;
+      }
+
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px; /* Adicionado padding para espaçamento nas laterais */
+      }
+
+      .logo {
+        width: 50px; /* Ou o tamanho desejado para o logo */
+      }
+
+      .nav-links {
+        list-style: none;
+        display: flex;
+        gap: 20px;
+        margin-left: auto; /* Empurra os itens para a direita */
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: white;
+      }
+
+      main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+
+      .filter-bar {
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .filter-bar .select-container {
+        display: inline-block;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        padding: 5px;
+      }
+
+      .filter-bar select {
+        padding: 8px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        margin: 0;
+      }
+
+      .legend-container {
+        position: relative;
+        width: 100%;
+        text-align: center;
+      }
+
+      .legend {
+        display: inline-block;
+        background-color: white;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .legend-item {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+      }
+
+      .legend-item div {
+        margin-right: 8px;
+      }
+
+      .blue-marker {
+        width: 20px;
+        height: 20px;
+        background-color: blue;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .purple-marker {
+        width: 20px;
+        height: 20px;
+        background-color: purple;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      #station-details {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #f0f0f0;
+        border-top: 1px solid #ddd;
+        border-radius: 10px 10px 0 0;
+        padding: 20px;
+        display: none;
+      }
+
+      #station-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      #station-details th,
+      #station-details td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+    </style>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <title>Nimbus</title>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo-container">
+          <a href="home.html">
+            <img src="nuvem.png" alt="Nimbus Logo" class="logo" />
+          </a>
+        </div>
+        <ul class="nav-links">
+          <li><a href="mapa.html">Mapa</a></li>
+          <li><a href="grafico.html">Gráfico</a></li>
+          <li><a href="tabela.html">Tabela</a></li>
+          <li><a href="index.html">Sair</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <div id="map"></div>
+      <div class="filter-bar">
+        <div class="select-container">
+          <label for="markerSelector">Selecionar Marcadores:</label>
+          <select id="markerSelector" onchange="applyFilter()">
+            <option value="all">Todas as estações</option>
+            <option value="convencionais">Estaçoes convencionais</option>
+            <option value="pluviometricas">Estaçoes pluviométricas</option>
+          </select>
+        </div>
+      </div>
+      <div class="legend-container">
+        <div class="legend">
+          <div class="legend-item">
+            <div class="blue-marker"></div> Estações pluviométricas (bolas azuis)
+          </div>
+          <div class="legend-item">
+            <div class="purple-marker"></div> Estações convencionais (bolas roxas)
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalhes da Estação (agora é uma div fixa no fundo da tela) -->
+      <div id="station-details">
+        <div class="details-container">
+          <h2>Detalhes da Estação</h2>
+          <table id="station-table">
+            <thead>
+              <tr>
+                <th>Estação</th>
+                <th>Última Temperatura (°C)</th>
+                <th>Velocidade do Vento (m/s)</th>
+                <th>Previsão de Chuva (mm)</th>
+                <th>Último Volume de Chuva (mm)</th>
+              </tr>
+            </thead>
+            <tbody id="station-details-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <script>
+        var mymap;
+        var markersLayer;
+
+        document.addEventListener("DOMContentLoaded", function () {
+          mymap = L.map("map").setView([-22.9083, -43.1964], 11); // Coordenadas centradas no Rio de Janeiro
+
+          markersLayer = L.layerGroup().addTo(mymap);
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap contributors",
+          }).addTo(mymap);
+
+          applyFilter(); // Chama a função para aplicar o filtro inicial
+        });
+
+        function applyFilter() {
+          var selectedOption = document.getElementById("markerSelector").value;
+
+          // Remove todos os marcadores do mapa
+          markersLayer.clearLayers();
+
+          // Adiciona marcadores de acordo com a opção selecionada
+          if (selectedOption === "all") {
+            // Adiciona todos os marcadores
+            addMarkers("convencionais");
+            addMarkers("pluviometricas");
+          } else {
+            // Adiciona marcadores da opção selecionada
+            addMarkers(selectedOption);
+          }
+        }
+
+        function addMarkers(markerType) {
+          var markersData = {
+            convencionais: [
+              { coordinates: [-22.990839, -43.370468], color: "purple", popupText: "[83054] - Aeroporto, RJ" },
+              { coordinates: [-22.965587, -43.277838], color: "purple", popupText: "[83007] - Alto da Boa Vista, RJ" },
+              { coordinates: [-22.884895, -43.383362], color: "purple", popupText: "[83478] - Campo dos afonsos, RJ" },
+            ],
+            pluviometricas: [
+              { coordinates: [-22.992810, -43.367295], color: "blue", popupText: "[D1840] - Jacarepaguá, RJ" },
+              { coordinates: [-23.003366, -43.400004], color: "blue", popupText: "[D3706] - Campo Golf, RJ" },
+              { coordinates: [-22.989993, -43.435794], color: "blue", popupText: "[D1839] - Vargem Pequena, RJ" },
+              { coordinates: [-22.994567, -43.269876], color: "blue", popupText: "[D1842] - São Conrado, RJ" },
+            ],
+          };
+
+          markersData[markerType].forEach(function (markerData) {
+            var marker = L.marker(markerData.coordinates, { icon: createCustomIcon(markerData.color) })
+              .addTo(markersLayer)
+              .bindPopup(markerData.popupText)
+              .on('click', function () {
+                showStationDetails(markerData);
+              });
+          });
+        }
+
+        function createCustomIcon(color) {
+          return L.divIcon({
+            className: "custom-icon",
+            iconSize: [15, 15],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30],
+            html: `<div style="background-color: ${color}; border-radius: 50%; width: 15px; height: 15px;"></div>`,
+          });
+        }
+
+        function showStationDetails(markerData) {
+          // Preenche a tabela com dados fictícios (substitua com dados reais)
+          var stationDetails = document.getElementById("station-details-body");
+          stationDetails.innerHTML = `
+            <tr>
+              <td>${markerData.popupText}</td>
+              <td>${getRandomNumber(15, 30).toFixed(2)}</td>
+              <td>${getRandomNumber(1, 10).toFixed(2)}</td>
+              <td>${getRandomNumber(0, 20).toFixed(2)}</td>
+              <td>${getRandomNumber(0, 50).toFixed(2)}</td>
+            </tr>
+          `;
+
+          // Exibe a div de detalhes da estação
+          document.getElementById("station-details").style.display = "block";
+        }
+
+        // Função auxiliar para gerar números aleatórios dentro de uma faixa
+        function getRandomNumber(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+      </script>
+    </main>
+  </body>
+</html>

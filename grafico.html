@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="nuvem.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0000ff" />
+    <link rel="stylesheet" href="home.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Nimbus</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      header {
+        background-color: #0000ff;
+        padding: 10px;
+        color: white;
+        text-align: center;
+      }
+
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px; /* Adicionado padding para espaçamento nas laterais */
+      }
+
+      .logo {
+        width: 50px; /* Ou o tamanho desejado para o logo */
+      }
+
+      .nav-links {
+        list-style: none;
+        display: flex;
+        gap: 20px;
+        margin-left: auto; /* Empurra os itens para a direita */
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: white;
+      }
+
+      main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+
+      #chartSection {
+        width: 80%; /* Ou a largura desejada */
+        max-width: 800px; /* Ou a largura máxima desejada */
+        margin-bottom: 20px;
+      }
+
+      #filtersSection {
+        width: 100%;
+        text-align: center;
+      }
+
+      canvas {
+        width: 100% !important;
+        max-width: 100%;
+      }
+
+      label,
+      select {
+        margin-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo-container">
+          <a href="home.html">
+            <img src="nuvem.png" alt="Nimbus Logo" class="logo" />
+          </a>
+        </div>
+        <ul class="nav-links">
+          <li><a href="mapa.html">Mapa</a></li>
+          <li><a href="grafico.html">Gráfico</a></li>
+          <li><a href="tabela.html">Tabela</a></li>
+          <li><a href="index.html">Sair</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <section id="chartSection">
+        <label for="mesSelector">Selecione o Mês:</label>
+        <select id="mesSelector">
+          <option value="Janeiro">Janeiro</option>
+          <option value="Fevereiro">Fevereiro</option>
+          <option value="Março">Março</option>
+          <option value="Abril">Abril</option>
+          <option value="Maio">Maio</option>
+        </select>
+
+        <!-- Adicione um seletor de temperatura -->
+        <label for="tempSelector">Selecione a Temperatura:</label>
+        <select id="tempSelector">
+          <option value="25">25°C</option>
+          <option value="26">26°C</option>
+          <option value="27">27°C</option>
+          <option value="28">28°C</option>
+          <option value="29">29°C</option>
+        </select>
+
+        <!-- Adicione um elemento canvas para o gráfico -->
+        <canvas id="myChart" width="400" height="400"></canvas>
+      </section>
+
+      <section id="filtersSection">
+        <!-- Adicione aqui qualquer conteúdo adicional que você deseje para a seção de filtros -->
+      </section>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Dados de exemplo para o gráfico de barras
+        var dados = {
+          labels: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio"],
+          datasets: [{
+            label: "Temperatura Média (°C)",
+            data: [25, 26, 28, 24, 27],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)', // Cor de fundo das barras
+            borderColor: 'rgba(75, 192, 192, 1)', // Cor da borda das barras
+            borderWidth: 1
+          }]
+        };
+
+        // Configurações do gráfico
+        var config = {
+          type: 'bar',
+          data: dados,
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                // Adicione um filtro para o eixo y
+                filters: {
+                  min: 20, // Valor mínimo
+                  max: 30, // Valor máximo
+                  stepSize: 2 // Incremento
+                }
+              },
+              x: {
+                // Adicione um filtro para o eixo x
+                filters: {
+                  include: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio"] // Inclui todos os meses inicialmente
+                }
+              }
+            }
+          }
+        };
+
+        // Criação do gráfico
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, config);
+
+        // Adicione ouvintes de eventos para os seletores para atualizar o gráfico
+        document.getElementById('mesSelector').addEventListener('change', atualizarGrafico);
+        document.getElementById('tempSelector').addEventListener('change', atualizarGrafico);
+
+        // Função para atualizar o gráfico com base nos seletores de mês e temperatura
+        function atualizarGrafico() {
+          var mesSelecionado = document.getElementById('mesSelector').value;
+          var tempSelecionada = parseFloat(document.getElementById('tempSelector').value);
+
+          // Atualize os dados do gráfico apenas para o mês selecionado
+          myChart.data.datasets[0].data = [tempSelecionada];
+          myChart.data.labels = [mesSelecionado];
+
+          // Atualize o gráfico
+          myChart.update();
+        }
+      });
+    </script>
+  </body>
+</html>

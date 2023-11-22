@@ -5,6 +5,7 @@ Esse é o repositório de código do projeto NIMBUS abaixo o link para o primeir
 ## Apresentação da empresa :cloud_with_lightning_and_rain:
 
   ### Link do repositorio original: https://github.com/CaioRangel1/projeto_front_end
+  ### Link da apresentação: https://docs.google.com/presentation/d/11ANaDdd84Y6GqzN-9VwDrzFStQD5r0GS-0p2WtjZTRU/edit#slide=id.p
 
 ## Pesquisa de componentes
 
